@@ -13,21 +13,21 @@ pygame.display.set_caption("Four in a Row Game")
 
 def get_complexity():
     global level
-    mylevel = input()
-    if mylevel == "1":
+    my_level = input()
+    if my_level == "1":
         level = 1
-    elif mylevel == "2":
+    elif my_level == "2":
         level = 2
-    elif mylevel == "3":
+    elif my_level == "3":
         level = 3
 
 
 def check_last_row(last_r):
     rez = columns
-    for c in range(columns):
-        if myGraphics.board[last_r][c] == 1:
+    for col in range(columns):
+        if myGraphics.board[last_r][col] == 1:
             rez = rez - 1
-        elif myGraphics.board[last_r][c] == 2:
+        elif myGraphics.board[last_r][col] == 2:
             rez = rez - 1
         else:
             pass
@@ -75,7 +75,21 @@ def check_winner():
 
 
 def get_best_move():
-    pass
+    directions = list()
+    for column in range(COLUMNS):
+        for row in range(ROWS):
+            if myGraphics.board[row][column] == 1:
+                if column-1 >= 0 and myGraphics.board[row][column-1] == 0:
+                    # print("possible position", (row, column - 1))
+                    directions.append((row, column - 1))
+                if column+1 < COLUMNS and myGraphics.board[row][column+1] == 0:
+                    # print("possible position", (row, column + 1))
+                    directions.append((row, column + 1))
+                if row-1 >= 0 and myGraphics.board[row-1][column] == 0:
+                    # print("possible position", (row - 1, column))
+                    directions.append((row - 1, column))
+    if len(directions) > 0:
+        return random.choice(directions)
 
 
 if __name__ == "__main__":
@@ -83,6 +97,8 @@ if __name__ == "__main__":
     running = True
     screen1 = True  # board screen
     play_human = False
+    medium_flag = True
+    draw_score = 0
     if len(sys.argv) == 5:
         if sys.argv[1] == "computer":
             # print(sys.argv[1])
@@ -118,9 +134,19 @@ if __name__ == "__main__":
     myGraphics.draw_board(screen, columns, rows)
     pygame.display.flip()
     while running:
+        draw_score = 0
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
+            for c in range(COLUMNS):
+                for r in range(ROWS):
+                    if myGraphics.board[r][c] != 0:
+                        draw_score = draw_score + 0
+                    else:
+                        draw_score = draw_score + 1
+            if draw_score == 0:
+                myGraphics.draw(screen)
+                pygame.display.update()
             if screen1 and not play_human:
                 # easy level algorithm
                 if level == 1:
@@ -137,7 +163,6 @@ if __name__ == "__main__":
                                     myGraphics.load_final_win(screen)
                                     screen1 = False
                                     pygame.display.update()
-
                                 elif check_winner() == 2:
                                     myGraphics.load_final_loose(screen)
                                     screen1 = False
@@ -269,13 +294,184 @@ if __name__ == "__main__":
                                     pygame.display.update()
                                 else:
                                     pass
+                            else:
+                                turn = 1
+                    else:
+                        if turn == 2:
+                            if medium_flag:
+                                position_ai = get_best_move()
+                                print(position_ai)
+                                color_col = position_ai[1]
+                                medium_flag = False
+                            else:
+                                position_ai = random.choice(myGraphics.centers)
+                                color_col = int(position_ai[0][0] / (500 / columns))
+                                medium_flag = True
+                            last_row = rows - 1
+                            if last_row == -1:
+                                break
+                            if myGraphics.board[last_row][color_col] == 0:
+                                myGraphics.board[last_row][color_col] = 2
+                                myGraphics.color(screen, color_col, 2, columns, last_row)
+                                if check_winner() == 1:
+                                    myGraphics.load_final_win(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                elif check_winner() == 2:
+                                    myGraphics.load_final_loose(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                else:
+                                    pass
+                                if check_last_row(last_row) == 0:
+                                    rows = rows - 1
+                                turn = 1
+                            elif myGraphics.board[last_row][color_col] == 1 or myGraphics.board[last_row][color_col] ==\
+                                    2:
+                                for i in range(last_row + 1):
+                                    if myGraphics.board[last_row - i][color_col] == 0 and \
+                                            (myGraphics.board[last_row][color_col] == 1 or
+                                             myGraphics.board[last_row][color_col] == 2):
+                                        myGraphics.board[last_row - i][color_col] = 2
+                                        myGraphics.color(screen, color_col, 2, columns, last_row - i)
+                                        turn = 1
+                                        break
+                                if check_winner() == 1:
+                                    myGraphics.load_final_win(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                elif check_winner() == 2:
+                                    myGraphics.load_final_loose(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                else:
+                                    pass
+                            else:
+                                turn = 2
+                # hard level strategy
+                elif level == 3:
+                    if event.type == pygame.MOUSEBUTTONDOWN:
+                        if turn == 1:
+                            color_col = int(event.pos[0]/(500/columns))
+                            last_row = rows - 1
+                            if last_row == -1:
+                                break
+                            if myGraphics.board[last_row][color_col] == 0:
+                                myGraphics.board[last_row][color_col] = 1
+                                myGraphics.color(screen, color_col, 1, columns, last_row)
+                                if check_winner() == 1:
+                                    myGraphics.load_final_win(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+
+                                elif check_winner() == 2:
+                                    myGraphics.load_final_loose(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                else:
+                                    pass
+                                if check_last_row(last_row) == 0:
+                                    rows = rows - 1
+                                turn = 2
+                            elif myGraphics.board[last_row][color_col] == 1 or myGraphics.board[last_row][color_col] ==\
+                                    2:
+                                for i in range(last_row+1):
+                                    if myGraphics.board[last_row-i][color_col] == 0 and \
+                                            (myGraphics.board[last_row][color_col] == 1 or
+                                             myGraphics.board[last_row][color_col] == 2):
+                                        myGraphics.board[last_row-i][color_col] = 1
+                                        myGraphics.color(screen, color_col, 1, columns, last_row - i)
+                                        turn = 2
+                                        break
+                                if check_winner() == 1:
+                                    myGraphics.load_final_win(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                elif check_winner() == 2:
+                                    myGraphics.load_final_loose(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                else:
+                                    pass
 
                             else:
                                 turn = 1
                     else:
-                        pass
-                # hard level strategy
-                if level == 3:
-                    pass
-
+                        if turn == 2:
+                            position_ai = get_best_move()
+                            print(position_ai)
+                            color_col = position_ai[1]
+                            last_row = rows - 1
+                            if last_row == -1:
+                                break
+                            if myGraphics.board[last_row][color_col] == 0:
+                                myGraphics.board[last_row][color_col] = 2
+                                myGraphics.color(screen, color_col, 2, columns, last_row)
+                                if check_winner() == 1:
+                                    myGraphics.load_final_win(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                elif check_winner() == 2:
+                                    myGraphics.load_final_loose(screen)
+                                    screen1 = False
+                                    pygame.display.update()
+                                else:
+                                    pass
+                                if check_last_row(last_row) == 0:
+                                    rows = rows - 1
+                                turn = 1
+                            else:
+                                turn = 2
+            elif screen1 and play_human:
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    if turn == 1:
+                        piece = 1
+                    else:
+                        piece = 2
+                    color_col = int(event.pos[0]/(500/columns))
+                    last_row = rows - 1
+                    if last_row == -1:
+                        break
+                    if myGraphics.board[last_row][color_col] == 0:
+                        myGraphics.board[last_row][color_col] = piece
+                        myGraphics.color(screen, color_col, piece, columns, last_row)
+                        if check_winner() == 1:
+                            myGraphics.winner_player_screen(screen, "player 1")
+                            screen1 = False
+                            pygame.display.update()
+                        elif check_winner() == 2:
+                            myGraphics.winner_player_screen(screen, "player 2")
+                            screen1 = False
+                            pygame.display.update()
+                        else:
+                            pass
+                        if check_last_row(last_row) == 0:
+                            rows = rows - 1
+                        if turn == 1:
+                            turn = 2
+                        else:
+                            turn = 1
+                    elif myGraphics.board[last_row][color_col] == 1 or myGraphics.board[last_row][color_col] == \
+                            2:
+                        for i in range(last_row + 1):
+                            if myGraphics.board[last_row - i][color_col] == 0 and \
+                                    (myGraphics.board[last_row][color_col] == 1 or
+                                     myGraphics.board[last_row][color_col] == 2):
+                                myGraphics.board[last_row - i][color_col] = piece
+                                myGraphics.color(screen, color_col, piece, columns, last_row - i)
+                                if turn == 1:
+                                    turn = 2
+                                else:
+                                    turn = 1
+                                break
+                        if check_winner() == 1:
+                            myGraphics.winner_player_screen(screen, "player 1")
+                            screen1 = False
+                            pygame.display.update()
+                        elif check_winner() == 2:
+                            myGraphics.winner_player_screen(screen, "player 2")
+                            screen1 = False
+                            pygame.display.update()
+                        else:
+                            pass
     pygame.quit()
